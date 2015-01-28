@@ -1,50 +1,248 @@
 package tool;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+
+import jxl.CellView;
+import jxl.Workbook;
+import jxl.format.Alignment;
+import jxl.write.Label;
+import jxl.write.WritableCellFormat;
+import jxl.write.WritableSheet;
+import jxl.write.WritableWorkbook;
+import jxl.write.WriteException;
+import jxl.write.biff.RowsExceededException;
+import jxl.write.Number;
+import ml.options.Options;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.LineIterator;
 
+import edu.mit.nlp.MyTextWrapper;
 import edu.mit.nlp.segmenter.SegTester;
 
 public class TestScript {
 
+	private static Map<String, Integer> fileSizeMap = new HashMap<>();
+	private static Map<String, Map<String, List<Double>>> resultsMap = new LinkedHashMap<String, Map<String, List<Double>>>();
+
 	public static void main(String[] args) {
-		prepareTestFiles();
+		String testBaseDir = "data/tests2/";
+		prepareTestFiles(testBaseDir);
+
 		PrintStream origOut = System.out;
-	    PrintStream interceptor = new Interceptor(origOut);
-	    System.setOut(interceptor);
-	    String testDirPath = "data/tests/combined";
-	    
-	    File testDir = new File(testDirPath);
-	    String[] testFiles = testDir.list();
-	    String results = "Results:\n";
-	    //String[] argsSegTest = new String[]{"-config", "config/dp-mine.config", "-dir", testDirPath, "-suff", "2_AVL_gs_MIT_AVL_gs.txt"};
-		//SegTester.main(argsSegTest);
-	    for(int i = 0; i < testFiles.length; i++){
-	    	String[] argsSegTest = new String[]{"-config", "config/dp-mine.config", "-dir", testDirPath, "-suff", testFiles[i]};
-			SegTester.main(argsSegTest);
-			results += testFiles[i] + "\t" + getLastLine(((Interceptor)interceptor).getPrints()) + "\n";
-	    }
-	    System.out.println(results);
+		PrintStream interceptor = new Interceptor(origOut);
+		System.setOut(interceptor);
+		String testDirPath = testBaseDir + "combined";
+
+		File testDir = new File(testDirPath);
+		String[] testFiles = testDir.list();
+		initResultsMap(testFiles);
+		String results = "Results:\n";
+		String[] argsSegTest = new String[]{"-config", "config/dp-mine.config", "-num-segs", "2"};
+		SegTester segTester = null;
+		try {
+			segTester = getSegTester(argsSegTest);
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+
+		for(int i = 0; i < testFiles.length; i++){
+
+			InputStream testInput;
+			List[] hyp_segs = new List[1];
+			try {
+				String data = FileUtils.readFileToString(new File(testDirPath + "/" + testFiles[i]));
+				testInput = new ByteArrayInputStream(data.getBytes("UTF-8"));
+				System.setIn(testInput);
+				SegTester.main(argsSegTest);
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+			List<String> files = getIndividualFiles(testFiles[i]);
+			List<List<Integer>> individualBoundaries = getIndividualBoundaries(files, segTester.getBoundaries());
+			int j = 0;
+			for(String individualFile : files){
+				MyTextWrapper[] textWrapper = new MyTextWrapper[1];
+				String t = testBaseDir + "gs/" + individualFile.split("\\.")[0] + "_gs.txt";
+				textWrapper[0] = segTester.loadText(t);
+				hyp_segs[0] = individualBoundaries.get(j++);
+				segTester.eval(hyp_segs, textWrapper);
+				saveResult(individualFile, testFiles[i], getLastLine(((Interceptor)interceptor).getPrints()));
+			}
+
+		}
+		printResults();
 	}
-	
+
+	private static void printResults() {
+		Workbook workbook;
+		WritableWorkbook writableWorkbook = null;
+		WritableSheet sheet = null;
+		String fileName = "results.xls";
+		new File(fileName).delete();
+		try {
+			workbook = Workbook.getWorkbook(new File(fileName));
+			writableWorkbook = Workbook.createWorkbook(new File(fileName), workbook);
+			sheet = writableWorkbook.getSheet(0);
+		} catch (Exception e1) {
+			try {
+				writableWorkbook = Workbook.createWorkbook(new File(fileName));
+				sheet = writableWorkbook.createSheet("results", 0);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		int col = 1;
+		int lin = 1;
+		try {
+			WritableCellFormat newFormat = new WritableCellFormat();
+			newFormat.setAlignment(Alignment.CENTRE);
+			for(String individualFile : resultsMap.keySet()){
+				for(String testFile : resultsMap.get(individualFile).keySet()){
+					CellView cell = sheet.getColumnView(col);
+					cell.setAutosize(true);
+					sheet.setColumnView(col, cell);
+					sheet.addCell(new Label(col, lin, testFile, newFormat));
+					sheet.addCell(new Label(col, lin+1, "Pk", newFormat));
+					sheet.addCell(new Label(col+1, lin+1, "Wd", newFormat));
+					col += 2;
+				}
+				lin += 2;
+				col = 0;
+				break;
+			}
+
+			for(String individualFile : resultsMap.keySet()){
+				CellView cell = sheet.getColumnView(col);
+				cell.setAutosize(true);
+				sheet.setColumnView(col, cell);
+				sheet.addCell(new Label(col++, lin, individualFile, newFormat));
+				for(String testFile : resultsMap.get(individualFile).keySet()){
+					List<Double> results = resultsMap.get(individualFile).get(testFile);
+					if(results != null){
+						sheet.addCell(new Number(col++, lin, results.get(0), newFormat));
+						sheet.addCell(new Number(col++, lin, results.get(1), newFormat));
+					}
+					else{
+						sheet.addCell(new Label(col++, lin, "-", newFormat));
+						sheet.addCell(new Label(col++, lin, "-", newFormat));
+					}
+				}
+				lin++;
+				col = 0;
+			}
+
+			writableWorkbook.write(); 
+			writableWorkbook.close();
+		} catch (RowsExceededException e) {
+			e.printStackTrace();
+		} catch (WriteException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static void saveResult(String individualFile, String testFile, String resultsStr) {
+		String[] resultsArray = resultsStr.split(" ");
+		Double pk = Double.parseDouble(resultsArray[0].replaceAll(",", "."));
+		Double wd = Double.parseDouble(resultsArray[1].replaceAll(",", "."));
+		List<Double> results = new ArrayList<Double>();
+		results.add(pk);
+		results.add(wd);
+		resultsMap.get(individualFile).put(testFile, results);		
+	}
+
+	private static void initResultsMap(String[] testFiles) {
+		for(int i = 0; i < testFiles.length; i++){
+			if(testFiles[i].startsWith("1_")){
+				String key = testFiles[i].split("1_")[1];
+				resultsMap.put(key, new LinkedHashMap<String, List<Double>>());
+				for(int j = 0; j < testFiles.length; j++){
+					resultsMap.get(key).put(testFiles[j], null);
+				}	
+			}
+		}
+	}
+
+	private static List<List<Integer>> getIndividualBoundaries(List<String> files, List<Integer> boundaries) {
+		List<List<Integer>> indBoundaries = new ArrayList<List<Integer>>();
+		List<Integer> indBound = new ArrayList<Integer>();
+		List<Integer> fileSizes = new ArrayList<Integer>();
+		for(String file : files){
+			fileSizes.add(fileSizeMap.get(file));
+		}
+
+		int i = 0;
+		int discount = 0;
+		for(Integer boundary : boundaries){
+			if(boundary - discount >= fileSizes.get(i)){
+				indBound.add(boundary - discount);
+				indBoundaries.add(indBound);
+				indBound = new ArrayList<Integer>();
+				discount += fileSizes.get(i++);
+			}
+			else{
+				indBound.add(boundary - discount);
+			}
+		}
+		return indBoundaries;
+	}
+
+	private static List<String> getIndividualFiles(String catFile) {
+		String[] files = catFile.split("[0-9]+_", 2)[1].split("-");
+		List<String> indFiles = new ArrayList<String>();
+		for(int i = 0; i < files.length-1; i++){
+			indFiles.add(files[i]+".txt");
+		}
+		indFiles.add(files[files.length-1]);
+		return indFiles;
+	}
+
+	public static SegTester getSegTester(String[] args) throws Exception{
+		Options options = new Options(args);
+		options.addSet("eval",0);
+		options.getSet("eval").addOption("config",Options.Separator.BLANK,Options.Multiplicity.ONCE);
+		options.getSet("eval").addOption("dir",Options.Separator.BLANK,Options.Multiplicity.ONCE);
+		options.getSet("eval").addOption("suff",Options.Separator.BLANK,Options.Multiplicity.ONCE);
+		options.getSet("eval").addOption("out",Options.Separator.BLANK,Options.Multiplicity.ZERO_OR_ONE);        
+		options.getSet("eval").addOption("init",Options.Separator.BLANK,Options.Multiplicity.ZERO_OR_ONE);
+		options.getSet("eval").addOption("debug",Options.Multiplicity.ZERO_OR_ONE);
+
+		options.addSet("run",0);
+		options.getSet("run").addOption("debug",Options.Multiplicity.ZERO_OR_ONE);
+		options.getSet("run").addOption("num-segs",Options.Separator.BLANK,Options.Multiplicity.ZERO_OR_ONE);
+		options.getSet("run").addOption("config",Options.Separator.BLANK,Options.Multiplicity.ZERO_OR_ONE);
+
+
+		ml.options.OptionSet optset = options.getMatchingSet();
+		return new SegTester(optset);
+	}
+
 	private static String getLastLine(String str) {
 		String[] strArray = str.split("\n");
 		return strArray[strArray.length-1];
 	}
 
-	public static void prepareTestFiles(){
-		String dirPath = "data/tests/";
+	public static void prepareTestFiles(String dirPath){
 		File f = new File(dirPath);
 
-		File theDir = new File("data/tests/combined");
-
-
+		File theDir = new File(dirPath + "/combined");
 		// if the directory does not exist, create it
 		if (!theDir.exists()) {
 			try{
@@ -57,36 +255,27 @@ public class TestScript {
 			try {
 				FileUtils.cleanDirectory(theDir);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} 
 		}
 
-		/*List<String> l1 = new ArrayList<String>();
-		List<String> l2 = new ArrayList<String>();
-		l2.add("1");
-		l2.add("2");
-		l2.add("3");
-		l2.add("4");
-		l2.add("5");
-		System.out.println(getFileCOmbinations(l1, l2, 3));*/
-		
 		List<String> l1 = new ArrayList<String>();
 		List<String> l2 = new ArrayList<String>();
 		String[] filesArray = f.list();
 		for(int i = 0; i < f.list().length; i++){
-			if(!new File(dirPath+filesArray[i]).isDirectory())
+			if(!new File(dirPath+filesArray[i]).isDirectory()){
 				l2.add(filesArray[i]);
+				fileSizeMap.put(filesArray[i], countLines(dirPath+filesArray[i], "UTF8"));
+			}
 		}
-		
+
 		for(int i = 1; i <= l2.size(); i++){
 			List<List<String>> fileCombinations = getFileCOmbinations(l1, l2, i);
-			//System.out.println(fileCombinations);
-			generateTstFiles(fileCombinations, dirPath, "data/tests/combined");
+			generateTestFiles(fileCombinations, dirPath, dirPath + "/combined");
 		}
 	}
 
-	private static void generateTstFiles(List<List<String>> fileCombinations, String filesDir, String outDir) {
+	private static void generateTestFiles(List<List<String>> fileCombinations, String filesDir, String outDir) {
 		int j = 0;
 		for(List<String> filesToCat : fileCombinations){
 			String fileName = getCatFileName(filesToCat);
@@ -102,7 +291,6 @@ public class TestScript {
 					// Write the file
 					FileUtils.write(file2, file1Str, true); // true for append
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}				
 			}
@@ -112,14 +300,12 @@ public class TestScript {
 	private static String getCatFileName(List<String> filesToCat) {
 		String name = "";
 		for(String fileName : filesToCat){
-			name += fileName.replaceAll("\\.txt", "")+"_";
+			name += fileName.replaceAll("\\.txt", "")+"-";
 		}
 		return filesToCat.size()+"_"+name.substring(0, name.length()-1) + ".txt";
 	}
 
 	private static List<List<String>> getFileCOmbinations(List<String> l1, List<String> l2, int n_combs) {
-		//System.out.println("L1: " + l1);
-		//System.out.println("L2: " + l2);
 		List<List<String>> combinations = new ArrayList<List<String>>();
 		if(l1.size() == n_combs){
 			combinations.add(l1);
@@ -139,33 +325,41 @@ public class TestScript {
 		return combinations;
 	}
 
-	private static String[] filterDirs(String[] files, String baseDir) {
-		List<String> filteredFiles = new ArrayList<String>();
-		for(int i = 0; i < files.length; i++){
-			if(new File(baseDir+files[i]).isDirectory())
-				continue;
-			filteredFiles.add(files[i]);
+	public static int countLines(String filePath, String encoding) {
+		File file = new File(filePath);
+		int lines = 0;
+		LineIterator lineIterator = null;
+		try {
+			lineIterator = FileUtils.lineIterator(file, encoding);
+			while ( lineIterator.hasNext() ) {
+				lines++;
+				lineIterator.nextLine();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			LineIterator.closeQuietly( lineIterator );
 		}
-		return filteredFiles.toArray(new String[filteredFiles.size()]);
+		return lines;
 	}
-	
+
 	private static class Interceptor extends PrintStream {
 		public String prints = "";
-	    public Interceptor(OutputStream out){
-	        super(out, true);
-	    }
-	    
-	    public String getPrints(){
-	    	String tmp = new String(prints);
-	    	prints = "";
-	    	return tmp;
-	    }
-	    
-	    @Override
-	    public void print(String s){
-	    	super.print(s);
-	    	prints += s + "\n"; 
-	    }
+		public Interceptor(OutputStream out){
+			super(out, true);
+		}
+
+		public String getPrints(){
+			String tmp = new String(prints);
+			prints = "";
+			return tmp;
+		}
+
+		@Override
+		public void print(String s){
+			super.print(s);
+			prints += s + "\n"; 
+		}
 	}
 
 }
