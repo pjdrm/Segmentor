@@ -11,5 +11,7 @@
 	<classpathentry kind="lib" path="lib/options.jar"/>
 	<classpathentry kind="lib" path="lib/bayes-seg.jar" sourcepath="/bayes-seg/src"/>
 	<classpathentry kind="lib" path="lib/jxl.jar"/>
+	<classpathentry kind="lib" path="lib/poi-3.9.jar"/>
+	<classpathentry kind="lib" path="lib/poi-scratchpad-3.9.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

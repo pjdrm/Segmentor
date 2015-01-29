@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -18,12 +17,12 @@ import jxl.CellView;
 import jxl.Workbook;
 import jxl.format.Alignment;
 import jxl.write.Label;
+import jxl.write.Number;
 import jxl.write.WritableCellFormat;
 import jxl.write.WritableSheet;
 import jxl.write.WritableWorkbook;
 import jxl.write.WriteException;
 import jxl.write.biff.RowsExceededException;
-import jxl.write.Number;
 import ml.options.Options;
 
 import org.apache.commons.io.FileUtils;
@@ -49,7 +48,6 @@ public class TestScript {
 		File testDir = new File(testDirPath);
 		String[] testFiles = testDir.list();
 		initResultsMap(testFiles);
-		String results = "Results:\n";
 		String[] argsSegTest = new String[]{"-config", "config/dp-mine.config", "-num-segs", "2"};
 		SegTester segTester = null;
 		try {
