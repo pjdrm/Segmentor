@@ -117,12 +117,12 @@ public class TestScript {
 					cell.setAutosize(true);
 					sheet.setColumnView(col, cell);
 					sheet.addCell(new Label(col, lin, testFile, newFormat));
-					sheet.addCell(new Label(col, lin+1, "Pk", newFormat));
+					sheet.addCell(new Label(col+1, lin, "Pk", newFormat));
 					sheet.addCell(new Label(col+1, lin+1, "Wd", newFormat));
-					col += 2;
+					lin += 2;
 				}
-				lin += 2;
-				col = 0;
+				col += 2;
+				lin = 0;
 				break;
 			}
 
@@ -130,20 +130,20 @@ public class TestScript {
 				CellView cell = sheet.getColumnView(col);
 				cell.setAutosize(true);
 				sheet.setColumnView(col, cell);
-				sheet.addCell(new Label(col++, lin, individualFile, newFormat));
+				sheet.addCell(new Label(col, lin++, individualFile, newFormat));
 				for(String testFile : resultsMap.get(individualFile).keySet()){
 					List<Double> results = resultsMap.get(individualFile).get(testFile);
 					if(results != null){
-						sheet.addCell(new Number(col++, lin, results.get(0), newFormat));
-						sheet.addCell(new Number(col++, lin, results.get(1), newFormat));
+						sheet.addCell(new Number(col, lin++, results.get(0), newFormat));
+						sheet.addCell(new Number(col, lin++, results.get(1), newFormat));
 					}
 					else{
-						sheet.addCell(new Label(col++, lin, "-", newFormat));
-						sheet.addCell(new Label(col++, lin, "-", newFormat));
+						sheet.addCell(new Label(col, lin++, "-", newFormat));
+						sheet.addCell(new Label(col, lin++, "-", newFormat));
 					}
 				}
-				lin++;
-				col = 0;
+				col++;
+				lin = 0;
 			}
 
 			writableWorkbook.write(); 
