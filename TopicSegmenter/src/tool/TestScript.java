@@ -33,7 +33,7 @@ import edu.mit.nlp.segmenter.SegTester;
 
 public class TestScript {
 
-	private static Map<String, Integer> fileSizeMap = new HashMap<>();
+	private static Map<String, Integer> fileSizeMap = new HashMap<String, Integer>();
 	private static Map<String, Map<String, List<Double>>> resultsMap = new LinkedHashMap<String, Map<String, List<Double>>>();
 
 	public static void main(String[] args) {
@@ -77,6 +77,7 @@ public class TestScript {
 			for(String individualFile : files){
 				MyTextWrapper[] textWrapper = new MyTextWrapper[1];
 				String t = testBaseDir + "gs/" + individualFile.split("\\.")[0] + "_gs.txt";
+				System.out.println("Debug: " + testFiles[i]);
 				textWrapper[0] = segTester.loadText(t);
 				hyp_segs[0] = individualBoundaries.get(j++);
 				segTester.eval(hyp_segs, textWrapper);
@@ -179,6 +180,8 @@ public class TestScript {
 	}
 
 	private static List<List<Integer>> getIndividualBoundaries(List<String> files, List<Integer> boundaries) {
+		if(files.size() == 3)
+			System.out.println("");
 		List<List<Integer>> indBoundaries = new ArrayList<List<Integer>>();
 		List<Integer> indBound = new ArrayList<Integer>();
 		List<Integer> fileSizes = new ArrayList<Integer>();
@@ -189,16 +192,25 @@ public class TestScript {
 		int i = 0;
 		int discount = 0;
 		for(Integer boundary : boundaries){
-			if(boundary - discount >= fileSizes.get(i)){
+			if(boundary - discount == fileSizes.get(i)){
 				indBound.add(boundary - discount);
 				indBoundaries.add(indBound);
 				indBound = new ArrayList<Integer>();
 				discount += fileSizes.get(i++);
 			}
+			else if(boundary - discount > fileSizes.get(i)){
+				indBound.add(fileSizes.get(i));
+				indBoundaries.add(indBound);
+				indBound = new ArrayList<Integer>();
+				discount += fileSizes.get(i++);
+				indBound.add(boundary - discount);
+			}
 			else{
 				indBound.add(boundary - discount);
 			}
 		}
+		if(files.size() > indBoundaries.size())
+			indBoundaries.add(indBound);
 		return indBoundaries;
 	}
 
