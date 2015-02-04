@@ -13,9 +13,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import jxl.Cell;
+import jxl.CellType;
 import jxl.CellView;
+import jxl.NumberCell;
+import jxl.Sheet;
 import jxl.Workbook;
 import jxl.format.Alignment;
+import jxl.read.biff.BiffException;
 import jxl.write.Label;
 import jxl.write.Number;
 import jxl.write.WritableCellFormat;
@@ -86,6 +91,7 @@ public class TestScript {
 
 		}
 		printResults();
+		processResults();
 	}
 
 	private static void printResults() {
@@ -153,6 +159,56 @@ public class TestScript {
 		} catch (WriteException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private static void processResults(){
+		try {
+			WritableWorkbook writableWorkbook = null;
+			WritableSheet sheetNew = null;
+			String fileName = "resultsProcessed.xls";
+			new File(fileName).delete();
+			writableWorkbook = Workbook.createWorkbook(new File(fileName));
+			WritableCellFormat newFormat = new WritableCellFormat();
+			newFormat.setAlignment(Alignment.CENTRE);
+			
+			Workbook workbook = Workbook.getWorkbook(new File("results.xls"));
+			Sheet sheet = workbook.getSheet(0);
+			int writeLin = 1;
+			for(int col = 3; col < sheet.getColumns(); col++){
+				sheetNew = writableWorkbook.createSheet(sheet.getCell(col, 0).getContents(), 0);
+				sheetNew.addCell(new Label(2, 0, "Pk"));
+				sheetNew.addCell(new Label(3, 0, "Wd"));
+				System.out.println(sheet.getCell(col, 0).getContents());
+				writeLin = 1;
+				for(int lin = 1; lin < sheet.getRows(); lin = lin + 2){
+					Cell resultCell = sheet.getCell(col,lin);
+					if (resultCell.getType() == CellType.NUMBER){ 
+						CellView cell = sheetNew.getColumnView(1);
+						cell.setAutosize(true);
+						sheetNew.setColumnView(1, cell);
+						sheetNew.addCell(new Label(1, writeLin, sheet.getCell(1, lin).getContents(), newFormat));
+						NumberCell nc = (NumberCell) resultCell; 
+						sheetNew.addCell(new Number(2, writeLin, nc.getValue()));
+						resultCell = sheet.getCell(col,lin+1);
+						nc = (NumberCell) resultCell;
+						sheetNew.addCell(new Number(3, writeLin++, nc.getValue()));
+					}
+					
+				}
+			}
+			
+			writableWorkbook.write(); 
+			writableWorkbook.close();
+		} catch (BiffException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (WriteException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
