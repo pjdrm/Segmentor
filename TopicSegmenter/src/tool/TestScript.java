@@ -43,7 +43,6 @@ public class TestScript {
 	private static String testBaseDir = "data/tests2/";
 	private static String testDirPath = testBaseDir + "combined";
 	private static String segDirPath = testBaseDir + "segmentations";
-	private String lol;
 
 	public static void main(String[] args) {
 		
