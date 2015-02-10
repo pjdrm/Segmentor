@@ -10,6 +10,7 @@ import java.io.Writer;
 import java.util.List;
 
 public class TopicBoundariesPlacer {
+	private String lol;
 
 	public static void main(String[] args) {
 		String boundariesStr = args[0].substring(1, args[0].length()-1);
