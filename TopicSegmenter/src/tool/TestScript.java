@@ -40,15 +40,17 @@ public class TestScript {
 
 	private static Map<String, Integer> fileSizeMap = new HashMap<String, Integer>();
 	private static Map<String, Map<String, List<Double>>> resultsMap = new LinkedHashMap<String, Map<String, List<Double>>>();
+	private static String testBaseDir = "data/tests2/";
+	private static String testDirPath = testBaseDir + "combined";
+	private static String segDirPath = testBaseDir + "segmentations";
 
 	public static void main(String[] args) {
-		String testBaseDir = "data/tests2/";
+		
 		prepareTestFiles(testBaseDir);
 
 		PrintStream origOut = System.out;
 		PrintStream interceptor = new Interceptor(origOut);
 		System.setOut(interceptor);
-		String testDirPath = testBaseDir + "combined";
 
 		File testDir = new File(testDirPath);
 		String[] testFiles = testDir.list();
@@ -79,12 +81,15 @@ public class TestScript {
 			List<String> files = getIndividualFiles(testFiles[i]);
 			List<List<Integer>> individualBoundaries = getIndividualBoundaries(files, segTester.getBoundaries());
 			int j = 0;
+			List<Integer> boundariesInt;
 			for(String individualFile : files){
 				MyTextWrapper[] textWrapper = new MyTextWrapper[1];
 				String t = testBaseDir + "gs/" + individualFile.split("\\.")[0] + "_gs.txt";
 				System.out.println("Debug: " + testFiles[i]);
 				textWrapper[0] = segTester.loadText(t);
-				hyp_segs[0] = individualBoundaries.get(j++);
+				boundariesInt = individualBoundaries.get(j++);
+				TopicBoundariesPlacer.placeBondariesInt(boundariesInt, testBaseDir+individualFile, segDirPath+"/"+ individualFile.split("\\.")[0] + "#" + testFiles[i]);
+				hyp_segs[0] = boundariesInt;
 				segTester.eval(hyp_segs, textWrapper);
 				saveResult(individualFile, testFiles[i], getLastLine(((Interceptor)interceptor).getPrints()));
 			}
@@ -92,6 +97,7 @@ public class TestScript {
 		}
 		printResults();
 		processResults();
+		System.out.println("Finished testing");
 	}
 
 	private static void printResults() {
@@ -309,6 +315,23 @@ public class TestScript {
 		File f = new File(dirPath);
 
 		File theDir = new File(dirPath + "/combined");
+		// if the directory does not exist, create it
+		if (!theDir.exists()) {
+			try{
+				theDir.mkdir();
+			} catch(SecurityException se){
+				se.printStackTrace();
+			}  
+		}
+		else{
+			try {
+				FileUtils.cleanDirectory(theDir);
+			} catch (IOException e) {
+				e.printStackTrace();
+			} 
+		}
+		
+		theDir = new File(segDirPath);
 		// if the directory does not exist, create it
 		if (!theDir.exists()) {
 			try{
