@@ -40,13 +40,16 @@ public class TestScript {
 
 	private static Map<String, Integer> fileSizeMap = new HashMap<String, Integer>();
 	private static Map<String, Map<String, List<Double>>> resultsMap = new LinkedHashMap<String, Map<String, List<Double>>>();
+	private static String resultsDir = "results/";
 	private static String testBaseDir = "data/tests2/";
 	private static String testDirPath = testBaseDir + "combined";
 	private static String segDirPath = testBaseDir + "segmentations";
 
 	public static void main(String[] args) {
 
+		String configFile = args[0];
 		prepareTestFiles(testBaseDir);
+		mkdir(resultsDir, false);
 
 		PrintStream origOut = System.out;
 		PrintStream interceptor = new Interceptor(origOut);
@@ -55,7 +58,7 @@ public class TestScript {
 		File testDir = new File(testDirPath);
 		String[] testFiles = testDir.list();
 		initResultsMap(testFiles);
-		String[] argsSegTest = new String[]{"-config", "config/mcsopt.ai.config", "-num-segs", "2"};
+		String[] argsSegTest = new String[]{"-config", "config/"+configFile, "-num-segs", "2"};
 		SegTester segTester = null;
 		try {
 			segTester = getSegTester(argsSegTest);
@@ -95,16 +98,27 @@ public class TestScript {
 			}
 
 		}
-		printResults();
-		processResults();
+		
+		String outDir = resultsDir + getAlgName(configFile);
+		printResults(outDir);
+		processResults(outDir);
 		System.out.println("Finished testing");
 	}
 
-	private static void printResults() {
+	private static String getAlgName(String configFile) {
+		if(configFile.equals("mcsopt.ai.config"))
+			return "MinCut";
+		else if(configFile.equals("dp-mine.config"))
+			return "Bayes";
+		return null;
+	}
+
+	private static void printResults(String dirPath) {
+		mkdir(dirPath, true);
+		String fileName = dirPath + "/results.xls";
 		Workbook workbook;
 		WritableWorkbook writableWorkbook = null;
 		WritableSheet sheet = null;
-		String fileName = "results.xls";
 		new File(fileName).delete();
 		try {
 			workbook = Workbook.getWorkbook(new File(fileName));
@@ -169,17 +183,18 @@ public class TestScript {
 		}
 	}
 
-	private static void processResults(){
+	private static void processResults(String dirPath){
+		mkdir(dirPath, false);
 		try {
 			WritableWorkbook writableWorkbook = null;
 			WritableSheet sheetNew = null;
-			String fileName = "resultsProcessed.xls";
+			String fileName = dirPath + "/resultsProcessed.xls";
 			new File(fileName).delete();
 			writableWorkbook = Workbook.createWorkbook(new File(fileName));
 			WritableCellFormat newFormat = new WritableCellFormat();
 			newFormat.setAlignment(Alignment.CENTRE);
 
-			Workbook workbook = Workbook.getWorkbook(new File("results.xls"));
+			Workbook workbook = Workbook.getWorkbook(new File(dirPath + "/results.xls"));
 			Sheet sheet = workbook.getSheet(0);
 			int writeLin = 1;
 			for(int col = 3; col < sheet.getColumns(); col++){
@@ -322,40 +337,9 @@ public class TestScript {
 		System.out.println("Generating combined test files");
 		File f = new File(dirPath);
 
-		File theDir = new File(dirPath + "/combined");
-		// if the directory does not exist, create it
-		if (!theDir.exists()) {
-			try{
-				theDir.mkdir();
-			} catch(SecurityException se){
-				se.printStackTrace();
-			}  
-		}
-		else{
-			try {
-				FileUtils.cleanDirectory(theDir);
-			} catch (IOException e) {
-				e.printStackTrace();
-			} 
-		}
-
-		theDir = new File(segDirPath);
-		// if the directory does not exist, create it
-		if (!theDir.exists()) {
-			try{
-				theDir.mkdir();
-			} catch(SecurityException se){
-				se.printStackTrace();
-			}  
-		}
-		else{
-			try {
-				FileUtils.cleanDirectory(theDir);
-			} catch (IOException e) {
-				e.printStackTrace();
-			} 
-		}
-
+		mkdir(dirPath + "/combined", true);
+		mkdir(segDirPath, true);
+		
 		List<String> l1 = new ArrayList<String>();
 		List<String> l2 = new ArrayList<String>();
 		String[] filesArray = f.list();
@@ -370,6 +354,27 @@ public class TestScript {
 		//for(int i = 1; i <= 10; i++){
 			List<List<String>> fileCombinations = getFileCOmbinations(l1, l2, i);
 			generateTestFiles(fileCombinations, dirPath, dirPath + "/combined");
+		}
+	}
+	
+	public static void mkdir(String dirPath, boolean clean){
+		File theDir = new File(dirPath);
+		// if the directory does not exist, create it
+		if (!theDir.exists()) {
+			try{
+				theDir.mkdir();
+			} catch(SecurityException se){
+				se.printStackTrace();
+			}  
+		}
+		else{
+			if(!clean)
+				return;
+			try {
+				FileUtils.cleanDirectory(theDir);
+			} catch (IOException e) {
+				e.printStackTrace();
+			} 
 		}
 	}
 

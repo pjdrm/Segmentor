@@ -51,12 +51,13 @@
   <target name="run" depends="create-jar" description="Runs the target program with Traits" >
 	<!-- fail unless="run.args" message="arguments must be passed using ant option -Drun.args="/> -->
 	<!-- fail unless="target.classpath" message="classpath for target program must be passed using ant option -Dtarget.classpath="/> -->
-	<java classname="tool.SRTPreProcessor" fork="true">
+	<java classname="tool.TestScript" fork="true">
 	  <classpath>
 		<path refid="project.classpath"/>
 		<pathelement location="${jar.filename}"/>
 		<pathelement path="${target.classpath}"/>
-	  </classpath>		
+	  </classpath>
+	  <arg value="${arg0}"/>		
 	  <!-- arg line="${run.args}" /> -->
 	</java>
   </target>
