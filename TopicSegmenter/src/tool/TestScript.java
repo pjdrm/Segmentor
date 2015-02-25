@@ -45,7 +45,7 @@ public class TestScript {
 	private static String segDirPath = testBaseDir + "segmentations";
 
 	public static void main(String[] args) {
-		
+
 		prepareTestFiles(testBaseDir);
 
 		PrintStream origOut = System.out;
@@ -55,7 +55,7 @@ public class TestScript {
 		File testDir = new File(testDirPath);
 		String[] testFiles = testDir.list();
 		initResultsMap(testFiles);
-		String[] argsSegTest = new String[]{"-config", "config/dp-mine.config", "-num-segs", "2"};
+		String[] argsSegTest = new String[]{"-config", "config/mcsopt.ai.config", "-num-segs", "2"};
 		SegTester segTester = null;
 		try {
 			segTester = getSegTester(argsSegTest);
@@ -168,7 +168,7 @@ public class TestScript {
 			e.printStackTrace();
 		}
 	}
-	
+
 	private static void processResults(){
 		try {
 			WritableWorkbook writableWorkbook = null;
@@ -178,7 +178,7 @@ public class TestScript {
 			writableWorkbook = Workbook.createWorkbook(new File(fileName));
 			WritableCellFormat newFormat = new WritableCellFormat();
 			newFormat.setAlignment(Alignment.CENTRE);
-			
+
 			Workbook workbook = Workbook.getWorkbook(new File("results.xls"));
 			Sheet sheet = workbook.getSheet(0);
 			int writeLin = 1;
@@ -201,10 +201,10 @@ public class TestScript {
 						nc = (NumberCell) resultCell;
 						sheetNew.addCell(new Number(3, writeLin++, nc.getValue()));
 					}
-					
+
 				}
 			}
-			
+
 			writableWorkbook.write(); 
 			writableWorkbook.close();
 		} catch (BiffException e) {
@@ -265,6 +265,13 @@ public class TestScript {
 				indBoundaries.add(indBound);
 				indBound = new ArrayList<Integer>();
 				discount += fileSizes.get(i++);
+				while(boundary - discount > fileSizes.get(i)){
+					discount += fileSizes.get(i);
+					indBound.add(fileSizes.get(i++));
+					indBoundaries.add(indBound);
+					indBound = new ArrayList<Integer>();
+				}
+				//discount += fileSizes.get(i++);
 				indBound.add(boundary - discount);
 			}
 			else{
@@ -312,6 +319,7 @@ public class TestScript {
 	}
 
 	public static void prepareTestFiles(String dirPath){
+		System.out.println("Generating combined test files");
 		File f = new File(dirPath);
 
 		File theDir = new File(dirPath + "/combined");
@@ -330,7 +338,7 @@ public class TestScript {
 				e.printStackTrace();
 			} 
 		}
-		
+
 		theDir = new File(segDirPath);
 		// if the directory does not exist, create it
 		if (!theDir.exists()) {
@@ -359,13 +367,13 @@ public class TestScript {
 		}
 
 		for(int i = 1; i <= l2.size(); i++){
+		//for(int i = 1; i <= 10; i++){
 			List<List<String>> fileCombinations = getFileCOmbinations(l1, l2, i);
 			generateTestFiles(fileCombinations, dirPath, dirPath + "/combined");
 		}
 	}
 
 	private static void generateTestFiles(List<List<String>> fileCombinations, String filesDir, String outDir) {
-		int j = 0;
 		for(List<String> filesToCat : fileCombinations){
 			String fileName = getCatFileName(filesToCat);
 			for(String fileToCat : filesToCat){
@@ -376,7 +384,6 @@ public class TestScript {
 					file1Str = FileUtils.readFileToString(file1)+"\n";
 					// File to write
 					File file2 = new File(outDir + "/" + fileName);
-					j++;
 					// Write the file
 					FileUtils.write(file2, file1Str, true); // true for append
 				} catch (IOException e) {
