@@ -41,13 +41,14 @@ public class TestScript {
 	private static Map<String, Integer> fileSizeMap = new HashMap<String, Integer>();
 	private static Map<String, Map<String, List<Double>>> resultsMap = new LinkedHashMap<String, Map<String, List<Double>>>();
 	private static String resultsDir = "results/";
-	private static String testBaseDir = "data/Bmr/";
+	private static String testBaseDir = "data/tests2/";
 	private static String testDirPath = testBaseDir + "combined";
 	private static String segDirPath = testBaseDir + "segmentations";
 
 	public static void main(String[] args) {
 
 		String configFile = args[0];
+		testBaseDir = args[1];
 		prepareTestFiles(testBaseDir);
 		mkdir(resultsDir, false);
 

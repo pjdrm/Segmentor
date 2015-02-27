@@ -58,6 +58,7 @@
 		<pathelement path="${target.classpath}"/>
 	  </classpath>
 	  <arg value="${arg0}"/>		
+	  <arg value="${arg1}"/>		
 	  <!-- arg line="${run.args}" /> -->
 	</java>
   </target>
