@@ -41,14 +41,16 @@ public class TestScript {
 	private static Map<String, Integer> fileSizeMap = new HashMap<String, Integer>();
 	private static Map<String, Map<String, List<Double>>> resultsMap = new LinkedHashMap<String, Map<String, List<Double>>>();
 	private static String resultsDir = "results/";
-	private static String testBaseDir = "data/tests2/";
-	private static String testDirPath = testBaseDir + "combined";
-	private static String segDirPath = testBaseDir + "segmentations";
+	private static String testBaseDir = null;
+	private static String testDirPath = null;
+	private static String segDirPath = null;
 
 	public static void main(String[] args) {
 
 		String configFile = args[0];
 		testBaseDir = args[1];
+		testDirPath = testBaseDir + "combined";
+		segDirPath = testBaseDir + "segmentations";
 		prepareTestFiles(testBaseDir);
 		mkdir(resultsDir, false);
 
@@ -353,8 +355,8 @@ public class TestScript {
 			}
 		}
 
-		for(int i = 1; i <= l2.size(); i++){
-		//for(int i = 1; i <= 3; i++){
+		//for(int i = 1; i <= l2.size(); i++){
+		for(int i = 1; i <= 3; i++){
 			List<List<String>> fileCombinations = getFileCOmbinations(l1, l2, i);
 			generateTestFiles(fileCombinations, dirPath, dirPath + "/combined");
 		}
