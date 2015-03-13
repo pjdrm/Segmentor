@@ -1,4 +1,4 @@
-package tool;
+package tools.segmentation;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

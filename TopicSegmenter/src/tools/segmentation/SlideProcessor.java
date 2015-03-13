@@ -1,4 +1,4 @@
-package tool;
+package tools.segmentation;
 
 import java.io.File;
 import java.io.FileInputStream;

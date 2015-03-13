@@ -1,4 +1,4 @@
-package tool;
+package tools.segmentation;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,7 +20,7 @@ import jxl.NumberCell;
 public class ResultsMerger {
 
 	public static void main(String[] args) {
-		String resutsDirPath = "results/";
+		String resutsDirPath = args[0];
 		File resultsDir = new File(resutsDirPath);
 		try {
 			WritableWorkbook allResultsExcel = Workbook.createWorkbook(new File("allResults.xls"));		

@@ -1,4 +1,4 @@
-package tool;
+package tools.segmentation;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -68,9 +68,9 @@ public class TestScript {
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
-
+		System.out.println("Starting segmentation tests");
 		for(int i = 0; i < testFiles.length; i++){
-
+			System.out.println("File test "+ i + "/" + testFiles.length);
 			InputStream testInput;
 			List[] hyp_segs = new List[1];
 			try {
@@ -85,7 +85,10 @@ public class TestScript {
 			}
 
 			List<String> files = getIndividualFiles(testFiles[i]);
-			List<List<Integer>> individualBoundaries = getIndividualBoundaries(files, segTester.getBoundaries());
+			List<Integer> catFileBounds = segTester.getBoundaries();
+			List<List<Integer>> individualBoundaries = getIndividualBoundaries(files, catFileBounds);
+			System.out.println("Cat file boundaries:\n" + catFileBounds);
+			System.out.println("Individul boundaries:\n" + catFileBounds);
 			int j = 0;
 			List<Integer> boundariesInt;
 			for(String individualFile : files){
@@ -101,7 +104,7 @@ public class TestScript {
 			}
 
 		}
-		
+
 		String outDir = resultsDir + getAlgName(configFile);
 		printResults(outDir);
 		processResults(outDir);
@@ -246,7 +249,8 @@ public class TestScript {
 		List<Double> results = new ArrayList<Double>();
 		results.add(pk);
 		results.add(wd);
-		resultsMap.get(individualFile).put(testFile, results);		
+		if(resultsMap.containsKey(individualFile))
+			resultsMap.get(individualFile).put(testFile, results);		
 	}
 
 	private static void initResultsMap(String[] testFiles) {
@@ -344,7 +348,7 @@ public class TestScript {
 
 		mkdir(dirPath + "/combined", true);
 		mkdir(segDirPath, true);
-		
+
 		List<String> l1 = new ArrayList<String>();
 		List<String> l2 = new ArrayList<String>();
 		String[] filesArray = f.list();
@@ -361,7 +365,7 @@ public class TestScript {
 			generateTestFiles(fileCombinations, dirPath, dirPath + "/combined");
 		}
 	}
-	
+
 	public static void mkdir(String dirPath, boolean clean){
 		File theDir = new File(dirPath);
 		// if the directory does not exist, create it
