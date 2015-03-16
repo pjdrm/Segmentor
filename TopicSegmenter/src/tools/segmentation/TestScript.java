@@ -38,7 +38,7 @@ import edu.mit.nlp.segmenter.SegTester;
 
 public class TestScript {
 
-	private static Map<String, Integer> fileSizeMap = new HashMap<String, Integer>();
+	public static Map<String, Integer> fileSizeMap = new HashMap<String, Integer>();
 	private static Map<String, Map<String, List<Double>>> resultsMap = new LinkedHashMap<String, Map<String, List<Double>>>();
 	private static String resultsDir = "results/";
 	private static String testBaseDir = null;
@@ -54,13 +54,27 @@ public class TestScript {
 		prepareTestFiles(testBaseDir);
 		mkdir(resultsDir, false);
 
-		PrintStream origOut = System.out;
-		PrintStream interceptor = new Interceptor(origOut);
-		System.setOut(interceptor);
-
 		File testDir = new File(testDirPath);
 		String[] testFiles = testDir.list();
+		testSegmentation(testFiles, configFile, testDirPath);
+		String outDir = resultsDir + getAlgName(configFile);
+		printResults(outDir);
+		processResults(outDir);
+		System.out.println("Finished testing");
+	}
+	
+	public static void prepareScript(String testBaseDir){
+		TestScript.testBaseDir = testBaseDir;
+		testDirPath = testBaseDir + "combined";
+		segDirPath = testBaseDir + "segmentations";
+	}
+
+	public static void testSegmentation(String[] testFiles, String configFile, String testDirPath) {
+		PrintStream origOut = System.out;
+		PrintStream interceptor = new Interceptor(origOut);
+		System.setOut(interceptor);		
 		initResultsMap(testFiles);
+		
 		String[] argsSegTest = new String[]{"-config", "config/"+configFile, "-num-segs", "2"};
 		SegTester segTester = null;
 		try {
@@ -104,14 +118,10 @@ public class TestScript {
 			}
 
 		}
-
-		String outDir = resultsDir + getAlgName(configFile);
-		printResults(outDir);
-		processResults(outDir);
-		System.out.println("Finished testing");
+		
 	}
 
-	private static String getAlgName(String configFile) {
+	public static String getAlgName(String configFile) {
 		if(configFile.equals("mcsopt.ai.config"))
 			return "MinCut";
 		else if(configFile.equals("dp-mine.config"))
@@ -121,7 +131,7 @@ public class TestScript {
 		return null;
 	}
 
-	private static void printResults(String dirPath) {
+	public static void printResults(String dirPath) {
 		mkdir(dirPath, true);
 		String fileName = dirPath + "/results.xls";
 		Workbook workbook;
@@ -191,7 +201,7 @@ public class TestScript {
 		}
 	}
 
-	private static void processResults(String dirPath){
+	public static void processResults(String dirPath){
 		mkdir(dirPath, false);
 		try {
 			WritableWorkbook writableWorkbook = null;
@@ -266,8 +276,23 @@ public class TestScript {
 	}
 
 	private static List<List<Integer>> getIndividualBoundaries(List<String> files, List<Integer> boundaries) {
-		if(files.size() == 3)
-			System.out.println("");
+		try {
+			//UI is sometimes giving [0] segmentation... 
+			//will consider these cases as just placing a segmentation boundary on the the ast line of each file
+			if(boundaries.size() == 1 && boundaries.size() < files.size()){
+				FileUtils.write(new File("logSegmentation.txt"), "[0] segmentation error - " + files + "\n", true);
+				List<List<Integer>> indBoundaries = new ArrayList<List<Integer>>();
+				for(String file : files){
+					List<Integer> indBound = new ArrayList<Integer>();
+					indBound.add(fileSizeMap.get(file));
+					indBoundaries.add(indBound);
+				}
+				return indBoundaries;				
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		List<List<Integer>> indBoundaries = new ArrayList<List<Integer>>();
 		List<Integer> indBound = new ArrayList<Integer>();
 		List<Integer> fileSizes = new ArrayList<Integer>();
@@ -387,7 +412,7 @@ public class TestScript {
 		}
 	}
 
-	private static void generateTestFiles(List<List<String>> fileCombinations, String filesDir, String outDir) {
+	public static void generateTestFiles(List<List<String>> fileCombinations, String filesDir, String outDir) {
 		for(List<String> filesToCat : fileCombinations){
 			String fileName = getCatFileName(filesToCat);
 			for(String fileToCat : filesToCat){
