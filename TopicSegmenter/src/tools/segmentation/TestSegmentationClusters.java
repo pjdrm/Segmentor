@@ -3,7 +3,23 @@ package tools.segmentation;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import jxl.LabelCell;
+import jxl.NumberCell;
+import jxl.Sheet;
+import jxl.Workbook;
+import jxl.format.Alignment;
+import jxl.read.biff.BiffException;
+import jxl.write.Label;
+import jxl.write.Number;
+import jxl.write.WritableCellFormat;
+import jxl.write.WritableSheet;
+import jxl.write.WritableWorkbook;
+import jxl.write.WriteException;
+import jxl.write.biff.RowsExceededException;
 
 import org.apache.commons.io.FileUtils;
 
@@ -31,7 +47,68 @@ public class TestSegmentationClusters {
 		String outDir = "resultsClusters/" + TestScript.getAlgName(configFile);
 		TestScript.printResults(outDir);
 		TestScript.processResults(outDir);
+		String optimalResultFilePath = args[3];
+		if(optimalResultFilePath != null){
+			addOptimalResult(optimalResultFilePath, outDir+"/resultsProcessed.xls");
+		}
 		System.out.println("Finished segmentation tests based on clustering");
+	}
+
+	private static void addOptimalResult(String optimalResultFilePath, String resultsProcessedFilePath) {
+
+		try {
+			Map<String, String> optimalResultsMap = new HashMap<String, String>();
+			Workbook workbook;
+			workbook = Workbook.getWorkbook(new File(optimalResultFilePath));
+			double bestWd = 1.0;
+			double bestPk = 1.0;
+			String bestFile = "";
+			for(Sheet sheet : workbook.getSheets()){
+				for(int lin = 1; lin < sheet.getRows(); lin++){
+					NumberCell pkCell = (NumberCell)sheet.getCell(2,lin);
+					NumberCell wdCell = (NumberCell)sheet.getCell(3,lin);
+					LabelCell bestFileCell = (LabelCell)sheet.getCell(1,lin);
+					if(wdCell.getValue() < bestWd){
+						bestWd = wdCell.getValue();
+						bestPk = pkCell.getValue();
+						bestFile = bestFileCell.getContents();
+					}
+				}
+				optimalResultsMap.put(sheet.getName(), bestFile + " " + String.valueOf(bestPk) + " " +  String.valueOf(bestWd));
+				bestWd = 1.0;
+				bestPk = 1.0;
+				bestFile = "";
+			}
+			
+			workbook = Workbook.getWorkbook(new File(resultsProcessedFilePath));
+			WritableWorkbook copy = Workbook.createWorkbook(new File(resultsProcessedFilePath), workbook);
+			int lin = copy.getSheet(0).getRows()+1;
+			WritableCellFormat newFormat = new WritableCellFormat();
+			newFormat.setAlignment(Alignment.CENTRE);
+			for(WritableSheet sheet : copy.getSheets()){
+				String[] optimalResults = optimalResultsMap.get(sheet.getName()).split(" ");
+				sheet.addCell(new Label(1, lin, optimalResults[0], newFormat));
+				sheet.addCell(new Number(2, lin, Double.parseDouble(optimalResults[1])));
+				sheet.addCell(new Number(3, lin, Double.parseDouble(optimalResults[2])));
+			}
+			copy.write();
+			copy.close();
+			
+		} catch (BiffException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (RowsExceededException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (WriteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
 	}
 
 	private static void generateMissingFiles(List<List<String>> clusters,	String testDir, String outDir) {
