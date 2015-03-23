@@ -39,7 +39,7 @@ public class TestSegmentationClusters {
 		}
 		TestScript.prepareScript(testDir+"/");
 		TestScript.mkdir(testDir+"/combined", true);
-		TestScript.generateTestFiles(prune(clusters), testDir, testDir+"/combined");
+		//TestScript.generateTestFiles(prune(clusters), testDir, testDir+"/combined");
 		generateMissingFiles(prune(clusters), testDir, testDir+"/combined");
 		initFileSizes(testDir);
 		String[] tfArray = new File(testDir+"/combined").list();
@@ -47,8 +47,8 @@ public class TestSegmentationClusters {
 		String outDir = "resultsClusters/" + TestScript.getAlgName(configFile);
 		TestScript.printResults(outDir);
 		TestScript.processResults(outDir);
-		String optimalResultFilePath = args[3];
-		if(optimalResultFilePath != null){
+		if(args.length == 4){
+			String optimalResultFilePath = args[3];
 			addOptimalResult(optimalResultFilePath, outDir+"/resultsProcessed.xls");
 		}
 		System.out.println("Finished segmentation tests based on clustering");
@@ -79,7 +79,7 @@ public class TestSegmentationClusters {
 				bestPk = 1.0;
 				bestFile = "";
 			}
-			
+
 			workbook = Workbook.getWorkbook(new File(resultsProcessedFilePath));
 			WritableWorkbook copy = Workbook.createWorkbook(new File(resultsProcessedFilePath), workbook);
 			int lin = copy.getSheet(0).getRows()+1;
@@ -93,7 +93,7 @@ public class TestSegmentationClusters {
 			}
 			copy.write();
 			copy.close();
-			
+
 		} catch (BiffException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -107,8 +107,8 @@ public class TestSegmentationClusters {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		
+
+
 	}
 
 	private static void generateMissingFiles(List<List<String>> clusters,	String testDir, String outDir) {

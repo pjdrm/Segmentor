@@ -10,8 +10,13 @@
 	<classpathentry kind="lib" path="lib/mtj.jar"/>
 	<classpathentry kind="lib" path="lib/options.jar"/>
 	<classpathentry kind="lib" path="lib/bayes-seg.jar" sourcepath="/bayes-seg/src"/>
-	<classpathentry kind="lib" path="lib/jxl.jar"/>
-	<classpathentry kind="lib" path="lib/poi-3.9.jar"/>
-	<classpathentry kind="lib" path="lib/poi-scratchpad-3.9.jar"/>
+	<classpathentry kind="lib" path="lib/jxl.jar" sourcepath="C:/Users/Mota/.m2/repository/net/sourceforge/jexcelapi/jxl/2.6.12/jxl-2.6.12-sources.jar"/>
+	<classpathentry kind="lib" path="lib/poi-ooxml-3.10.jar"/>
+	<classpathentry kind="lib" path="lib/poi-3.10.jar"/>
+	<classpathentry kind="lib" path="lib/poi-scratchpad-3.10.jar"/>
+	<classpathentry kind="lib" path="lib/xmlbeans-5.2.2.jar"/>
+	<classpathentry kind="lib" path="lib/poi-ooxml-schemas-3.10.jar"/>
+	<classpathentry kind="lib" path="lib/dom4j-1.6.1.jar"/>
+	<classpathentry kind="lib" path="lib/stax-api-1.0.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
