@@ -50,6 +50,7 @@ public class TestScript {
 	private static String segDirPath = null;
 	private static String cacheFile = "cacheResults.txt";
 	private static boolean isCachLoaded = false;
+	private static boolean useCache = false;
 	private static final int MAX_THREDS = Runtime.getRuntime().availableProcessors();
 
 
@@ -84,6 +85,7 @@ public class TestScript {
 		initResultsMap(testFiles);
 
 		String[] argsSegTest = new String[]{"-config", "config/"+configFile, "-num-segs", "2"};
+		//String[] argsSegTest = new String[]{"-config", "config/"+configFile};
 		/*SegTester segTester = null;
 		try {
 			segTester = getSegTester(argsSegTest);
@@ -152,6 +154,9 @@ public class TestScript {
 	}
 
 	private static boolean isCached(String fileComb) {
+		if(!useCache)
+			return false;
+		
 		for(String fileKey : resultsMap.keySet()){
 			for(String fileCombKey : resultsMap.get(fileKey).keySet()){
 				if(fileCombKey.equals(fileComb) && resultsMap.get(fileKey).get(fileCombKey) != null){
@@ -160,6 +165,10 @@ public class TestScript {
 			}
 		}
 		return false;
+	}
+	
+	public static void disableCache(){
+		useCache = false;
 	}
 
 	public static String getAlgName(String configFile) {
@@ -561,6 +570,14 @@ public class TestScript {
 		}
 		return lines;
 	}
+	
+	public static void initFileSizes(String testDir) {
+		for(String tf : new File(testDir).list()){
+			if(!new File(testDir + "/" + tf).isDirectory()){
+				TestScript.fileSizeMap.put(tf, TestScript.countLines(testDir+"/"+tf, "UTF8"));
+			}
+		}		
+	}
 
 	private static class Interceptor extends PrintStream {
 		public String prints = "";
@@ -627,7 +644,7 @@ public class TestScript {
 				System.out.println("Debug: " + testFilePath);
 				textWrapper[0] = segTester.loadText(t);
 				boundariesInt = individualBoundaries.get(j++);
-				//TopicBoundariesPlacer.placeBondariesInt(boundariesInt, testBaseDir+individualFile, segDirPath+"/"+ individualFile.split("\\.")[0] + "#" + testFiles[i]);
+				TopicBoundariesPlacer.placeBondariesInt(boundariesInt, testBaseDir+individualFile, segDirPath+"/"+ individualFile.split("\\.")[0] + "#" + testFilePath);
 				hyp_segs[0] = boundariesInt;
 				synchronized(this){
 					segTester.eval(hyp_segs, textWrapper);

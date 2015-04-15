@@ -1,1 +1,23 @@
 /bin
+/baselines
+/BmrClusters
+/build
+/clustering
+/clusteringAvl
+/config
+/data
+/eps0.9distCosine
+/results
+/resultsAVL
+/resultsClusters
+/allResults.xls
+/allResultsBmr - Copy.xlsx
+/allResultsBmr.xlsx
+/elkiCommands.txt
+/first_results.txt
+/log.config
+/logSegmentation.txt
+/results.xls
+/resultsProcessed_CAT.xls
+/temp.xls
+/TopicSegmenter.jar

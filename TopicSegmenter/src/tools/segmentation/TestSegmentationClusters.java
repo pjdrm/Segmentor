@@ -39,9 +39,9 @@ public class TestSegmentationClusters {
 		}
 		TestScript.prepareScript(testDir+"/");
 		TestScript.mkdir(testDir+"/combined", true);
-		//TestScript.generateTestFiles(prune(clusters), testDir, testDir+"/combined");
+		TestScript.generateTestFiles(prune(clusters), testDir, testDir+"/combined");
 		generateMissingFiles(prune(clusters), testDir, testDir+"/combined");
-		initFileSizes(testDir);
+		TestScript.initFileSizes(testDir);
 		String[] tfArray = new File(testDir+"/combined").list();
 		TestScript.testSegmentation(tfArray, configFile, testDir+"/combined");
 		String outDir = "resultsClusters/" + TestScript.getAlgName(configFile);
@@ -126,14 +126,6 @@ public class TestSegmentationClusters {
 		}
 		missingClusters.add(fullCluster);
 		TestScript.generateTestFiles(missingClusters, testDir, testDir+"/combined");		
-	}
-
-	private static void initFileSizes(String testDir) {
-		for(String tf : new File(testDir).list()){
-			if(!new File(testDir + "/" + tf).isDirectory()){
-				TestScript.fileSizeMap.put(tf, TestScript.countLines(testDir+"/"+tf, "UTF8"));
-			}
-		}		
 	}
 
 	private static List<List<String>> prune(List<List<String>> clusters) {
